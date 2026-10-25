@@ -1,0 +1,44 @@
+[build-system]
+requires      = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "pdb-browser"
+version         = "0.1.0"
+description     = "Interactive CLI and GUI symbol browser for Windows PE/PDB files."
+readme          = "README.md"
+requires-python = ">=3.14"
+license         = { text = "GPLv3" }
+
+dependencies = [
+    "pefile>=2024.8.26",
+    "requests>=2.34.2",
+]
+
+[project.optional-dependencies]
+# GUI requires tkinter; ships with most Python distributions but may need
+# python3-tk on some Linux distros.
+gui = []
+
+dev = [
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+]
+
+[project.scripts]
+pdb-browser = "main:main"
+
+[tool.setuptools]
+py-modules = ["cli", "gui", "main", "pdb_tool", "symbols"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["."]
+omit   = ["tests/*", "setup.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

@@ -1,0 +1,90 @@
+name: Build executables
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact-name: pdb-browser-windows
+          - os: macos-latest
+            artifact-name: pdb-browser-macos
+          - os: ubuntu-latest
+            artifact-name: pdb-browser-linux
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Nuitka and application dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install nuitka pefile requests
+
+      - name: Build Windows executable
+        if: runner.os == 'Windows'
+        run: |
+          python -m nuitka --onefile --windows-console-mode=disable --enable-plugin=tk-inter --output-filename=pdb-browser.exe main.py
+          New-Item -ItemType Directory -Force release-assets | Out-Null
+          Copy-Item pdb-browser.exe release-assets\
+
+      - name: Build macOS application bundle
+        if: runner.os == 'macOS'
+        run: |
+          python -m nuitka --mode=app --enable-plugin=tk-inter --output-filename=pdb-browser main.py
+          mkdir -p release-assets
+          ditto -c -k --sequesterRsrc --keepParent pdb-browser.app release-assets/pdb-browser-macos.zip
+
+      - name: Build Linux executable
+        if: runner.os == 'Linux'
+        run: |
+          python -m nuitka --onefile --enable-plugin=tk-inter --output-filename=pdb-browser main.py
+          mkdir -p release-assets
+          cp pdb-browser release-assets/pdb-browser-linux
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-release:
+    name: Publish release assets
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download platform executables
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: pdb-browser-*
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" release-assets/* --verify-tag --generate-notes
