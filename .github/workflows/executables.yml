@@ -49,9 +49,9 @@ jobs:
       - name: Build macOS application bundle
         if: runner.os == 'macOS'
         run: |
-          python -m nuitka --mode=app --assume-yes-for-downloads --enable-plugin=tk-inter --output-filename=pdb-browser main.py
+          python -m nuitka --onefile --assume-yes-for-downloads --enable-plugin=tk-inter --output-filename=pdb-browser main.py
           mkdir -p release-assets
-          ditto -c -k --sequesterRsrc --keepParent pdb-browser.app release-assets/pdb-browser-macos.zip
+          cp pdb-browser release-assets/pdb-browser-macos
 
       - name: Build Linux executable
         if: runner.os == 'Linux'
