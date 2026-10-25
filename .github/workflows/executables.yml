@@ -42,21 +42,21 @@ jobs:
       - name: Build Windows executable
         if: runner.os == 'Windows'
         run: |
-          python -m nuitka --onefile --windows-console-mode=disable --enable-plugin=tk-inter --output-filename=pdb-browser.exe main.py
+          python -m nuitka --onefile --assume-yes-for-downloads --windows-console-mode=disable --enable-plugin=tk-inter --output-filename=pdb-browser.exe main.py
           New-Item -ItemType Directory -Force release-assets | Out-Null
           Copy-Item pdb-browser.exe release-assets\
 
       - name: Build macOS application bundle
         if: runner.os == 'macOS'
         run: |
-          python -m nuitka --mode=app --enable-plugin=tk-inter --output-filename=pdb-browser main.py
+          python -m nuitka --mode=app --assume-yes-for-downloads --enable-plugin=tk-inter --output-filename=pdb-browser main.py
           mkdir -p release-assets
           ditto -c -k --sequesterRsrc --keepParent pdb-browser.app release-assets/pdb-browser-macos.zip
 
       - name: Build Linux executable
         if: runner.os == 'Linux'
         run: |
-          python -m nuitka --onefile --enable-plugin=tk-inter --output-filename=pdb-browser main.py
+          python -m nuitka --onefile --assume-yes-for-downloads --enable-plugin=tk-inter --output-filename=pdb-browser main.py
           mkdir -p release-assets
           cp pdb-browser release-assets/pdb-browser-linux
 
